@@ -18,12 +18,13 @@ def send_cef(payload):
     #c.set_field('dvchost', 'www.mcpforlife.com')
     #message = "This is a test event"
     c.set_field("message", payload["message"])
-    c.set_field("DeviceEventClassID", payload["DeviceEventClassID"])
+    c.set_field("signatureId", payload["signatureId"])
     #c.set_field('sourceAddress', '.168.67.1')
     #c.set_field('sourcePort', 12345)    
     cef_msg = c.build_cef()
-    #client.log(message=cef_msg, program="CEF")
-    #client.close()
+    print(cef_msg)
+    client.log(message=cef_msg, program="CEF")
+    client.close()
 
 def sys_to_cef(syslog_msg):
     ret = re.findall(match_str, syslog_msg)
@@ -34,7 +35,7 @@ def sys_to_cef(syslog_msg):
         sev = ret[2].split("-")[1]
         payload["DeviceName"] = ret[1]
         payload["Computer"] = ret[1]
-        payload["DeviceEventClassID"] = ret[2].split("-")[-1]
+        payload["signatureId"] = ret[2].split("-")[-1] # DeviceEventClassID
         payload["LogSeverity"] = severity_table[sev]
         payload["OriginalLogSeverity"] = sev
         payload["message"] = "{}: {}".format(ret[2], ret[3])
@@ -42,7 +43,7 @@ def sys_to_cef(syslog_msg):
         # Deny UDP reverse path check from 135.89.112.113 to 32.246.198.2 on interface inside16
         #if re.match("(Deny)\s(.+6)\s(reverse)\s(path)\s(check)\s(from)\s(.+)\sto\s(.+)\s(on)\s(interface)\s(.+)", msg):
         if re.match("Deny\s.{,10}\sreverse\spath\scheck", msg):
-            print("MATCHED!")
+            #print("MATCHED!")
             tmp = msg.split(" ")
             payload["DestinationIP"] = tmp[8]
             payload["Protocol"] = tmp[1]
@@ -51,7 +52,7 @@ def sys_to_cef(syslog_msg):
             payload["SimplifiedDeviceAction"] = tmp[0]
         else:
             print("Nothing else to parse")
-        print(payload)
+        #print(payload)
         send_cef(payload)
     #print(ret)
 

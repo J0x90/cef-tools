@@ -10,8 +10,7 @@ from cefevent.syslog import Syslog
 
 class CEFSender(object):
     def __init__(
-        self, files: List[AnyStr], host: AnyStr, port: int, protocol: AnyStr = "UDP"
-    ):
+        self, files: List[AnyStr], host: AnyStr, port: int, protocol: AnyStr = "UDP"):
 
         self.cef_poll = []
         self.host = host
@@ -48,9 +47,11 @@ class CEFSender(object):
                     self.cef_poll.append(cef)
 
     def get_cef_poll(self):
+        print("HERE")
         self.log(self.cef_poll)
 
     def get_info(self):
+        print("HERE")
         self.log(
             "There are {} events in the poll. The max EPS is set to {}".format(
                 len(self.cef_poll), self.max_eps
@@ -58,14 +59,17 @@ class CEFSender(object):
         )
 
     def send_log(self, cef: CEFEvent):
+        print("HERE")
         self.syslog.send(cef.build_cef())
         self.sent_count += 1
         self.checkpoint_sent_count += 1
 
     def send_random_log(self, *args, **kw):
+        print("HERE")
         self.send_log(random.choice(self.cef_poll))
 
     def timed_call(self, calls_per_second: float, callback: Callable, *args, **kw):
+        print("HERE")
         period = 1.0 / calls_per_second
 
         def reload():
@@ -75,6 +79,7 @@ class CEFSender(object):
         self.scheduler.enter(period, 0, reload, ())
 
     def get_eps(self):
+        print("HERE")
         now = datetime.now()
         time_diff = (now - self.auto_send_checkpoint).total_seconds()
         eps = self.checkpoint_sent_count / (time_diff if time_diff > 0 else 1)
