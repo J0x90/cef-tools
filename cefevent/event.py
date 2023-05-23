@@ -227,8 +227,8 @@ class CEFEvent(object):
             "version": 0,
             "deviceVendor": "CEF Vendor",
             "deviceProduct": "CEF Product",
-            "deviceVersion": "1.0",
+            "deviceVersion": "",
             "signatureId": "0",
-            "name": "CEF Event",
+            "name": "",
             "severity": 5,
         }
