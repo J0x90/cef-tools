@@ -22,8 +22,8 @@ def send_cef(payload):
     #c.set_field('sourceAddress', '.168.67.1')
     #c.set_field('sourcePort', 12345)    
     cef_msg = c.build_cef()
-    client.log(message=cef_msg, program="CEF")
-    client.close()
+    #client.log(message=cef_msg, program="CEF")
+    #client.close()
 
 def sys_to_cef(syslog_msg):
     ret = re.findall(match_str, syslog_msg)
