@@ -10,10 +10,11 @@ severity_table = {"1": "High", "2": "High", "3": "Medium", "4": "Medium"}
 
 def send_cef(payload, spoof_host):
     c = CEFEvent()
-    #for k, v in payload.items():
-    #    print(k)
-    #    print(v)
-    #    c.set_field(k, v)
+    for k, v in payload.items():
+        #print(k)
+        #print(v)
+        c.set_field(k, v)
+    """
     c.set_field('deviceVendor', 'Cisco')
     c.set_field('deviceProduct', 'ASA')
     c.set_field("dvchost", payload["dvchost"])
@@ -30,9 +31,9 @@ def send_cef(payload, spoof_host):
     c.set_field("proto", payload["proto"])
     #c.set_field("RemoteIP", payload["RemoteIP"])
     #c.set_field("deviceDirection", payload["deviceDirection"])
+    """
     cef_msg = c.build_cef()
-    print(cef_msg)
-    #cef_msg = "CEF:0|Cisco|ASA||106021||High|dvchost=10.28.95.19 deviceFacility=local4 act=Deny src=135.89.112.113 dst=32.246.198.2 msg=%ASA-1-106021: Deny UDP reverse path check from 135.89.112.113 to 32.246.198.2 on interface inside16 rt=5/24/2023 12:46:02 AM proto=UDP OriginalLogSeverity=1 RemoteIP=135.89.112.113"
+    #print(cef_msg)
     client.log(message=cef_msg, program="CEF", hostname=spoof_host)
     client.close()
 
