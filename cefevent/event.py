@@ -196,7 +196,7 @@ class CEFEvent(object):
             for field in self.extensions.keys()
         ]
 
-        print(extensions)
+        #print(extensions)
 
         return template.format(extensions=" ".join(extensions), **self.prefixes)
 
