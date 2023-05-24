@@ -11,12 +11,18 @@ extension_dictionary = {
         "length": 63,
         "description": "Simplifies the DeviceAction value to a static set of values, while keeping the original value in the DeviceAction field.",
     },
-    "rem": {
-        "full_name": "remoteAddress",
+    "RemoteIP": {
+        "full_name": "RemoteIP",
         "data_type": "IPv4 Address",
         "length": 0,
         "description": "The remote IP address. This value is based on CommunicationDirection field, if possible.",
-    },    
+    },
+    "OriginalLogSeverity" {
+        "full_name": "OriginalLogSeverity",
+        "data_type": "String",
+        "length": 1023,
+        "description": "String or integer that serves as a unique identifier for severity in ASA.",
+    },
     "app": {
         "full_name": "applicationProtocol",
         "data_type": "String",
@@ -316,12 +322,6 @@ extension_dictionary = {
         "data_type": "String",
         "length": 1023,
         "description": "The facility generating this event. Syslog for example has an explicit facility associated with every event.",
-    },
-    "originalLogSeverity" {
-        "full_name": "originalLogSeverity",
-        "data_type": "String",
-        "length": 1023,
-        "description": "String or integer that serves as a unique identifier for severity in ASA.",
     },
     "deviceInboundInterface": {
         "full_name": "deviceInboundInterface",
