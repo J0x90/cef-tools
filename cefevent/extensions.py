@@ -17,12 +17,14 @@ extension_dictionary = {
         "length": 0,
         "description": "The remote IP address. This value is based on CommunicationDirection field, if possible.",
     },
+    """
     "OriginalLogSeverity" {
         "full_name": "OriginalLogSeverity",
         "data_type": "String",
         "length": 1023,
         "description": "String or integer that serves as a unique identifier for severity in ASA.",
     },
+    """
     "app": {
         "full_name": "applicationProtocol",
         "data_type": "String",

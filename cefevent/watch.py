@@ -9,7 +9,7 @@ payload = {"deviceVendor": "Cisco", "deviceProduct": "ASA", "deviceFacility": "l
 severity_table = {"1": "High", "2": "High", "3": "Medium", "4": "Medium"}
 
 
-def send_cef(payload, spoof_host):
+def send_cef(payload, spoof_host, syslog_msg):
     c = CEFEvent()
     for k, v in payload.items():
         c.set_field(k, v)
@@ -52,10 +52,11 @@ def sys_to_cef(syslog_msg):
         else:
             print("Nothing else to parse")
         #print(payload)
-        send_cef(payload, spoof_host)
+        send_cef(payload, spoof_host, syslog_msg)
     #print(ret)
 
 
+"""
 def follow(thefile):
     thefile.seek(0,2)
     while True:
@@ -64,13 +65,60 @@ def follow(thefile):
             time.sleep(0.1)
             continue
         yield line
+"""
+
+
+"""
+def follow(f, log_name):
+    f.seek(0,2)
+    inode = os.fstat(f.fileno()).st_ino
+    while True:
+        line = f.readline()
+        if not line:
+            time.sleep(0.1)
+            try:
+                if os.stat(log_name).st_ino != inode:
+                    f.close()
+                    f = open(log_name, "r")
+                    inode = os.fstat(f.fileno()).st_ino
+            except IOError:
+                pass
+            continue
+        yield line
+"""
 
 
 if __name__ == "__main__":
-    logfile = open("/var/log/asa/asa.log", "r")
-    loglines = follow(logfile)
+    """
+    log_name = "/var/log/asa/asa.log"
+    logfile = open(log_name, "r")
+    loglines = follow(logfile, log_name)
     for line in loglines:
         line = line.strip()
-        print(line)
         sys_to_cef(line)
+    """
 
+    file_name = "/var/log/asa/asa.log"
+    seek_end = True
+    while True: # handle moved/truncated files by allowing to reopen
+        with open(file_name) as f:
+            if seek_end: # reopened files must not seek end
+                f.seek(0, 2)
+            while True: # line reading loop
+                line = f.readline()
+                if not line:
+                    try:
+                        if f.tell() > os.path.getsize(file_name):
+                            # rotation occurred (copytruncate/create)
+                            f.close()
+                            seek_end = False
+                            break
+                    except FileNotFoundError:
+                        # rotation occurred but new file still not created
+                        pass # wait 1 second and retry
+                    time.sleep(1)
+                else:
+                    #with open("out.txt", "a") as fw:
+                    #    line = line.strip()
+                    #    fw.write("{}\n".format(line))
+                    sys_to_cef(line)

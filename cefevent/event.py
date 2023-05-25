@@ -2,7 +2,8 @@ import re
 import socket
 from typing import Any, AnyStr, List
 
-from cefevent.extensions import extension_dictionary
+#from cefevent.extensions import extension_dictionary
+from extensions import extension_dictionary
 
 
 class CEFEvent(object):
