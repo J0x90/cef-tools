@@ -5,26 +5,6 @@ extension_dictionary = {
         "length": 63,
         "description": "Action mentioned in the event.",
     },
-    "simplifiedDeviceAction": {
-        "full_name": "simplifiedDeviceAction",
-        "data_type": "String",
-        "length": 63,
-        "description": "Simplifies the DeviceAction value to a static set of values, while keeping the original value in the DeviceAction field.",
-    },
-    "RemoteIP": {
-        "full_name": "RemoteIP",
-        "data_type": "IPv4 Address",
-        "length": 0,
-        "description": "The remote IP address. This value is based on CommunicationDirection field, if possible.",
-    },
-    """
-    "OriginalLogSeverity" {
-        "full_name": "OriginalLogSeverity",
-        "data_type": "String",
-        "length": 1023,
-        "description": "String or integer that serves as a unique identifier for severity in ASA.",
-    },
-    """
     "app": {
         "full_name": "applicationProtocol",
         "data_type": "String",

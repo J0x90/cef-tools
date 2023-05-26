@@ -6,7 +6,8 @@ from event import CEFEvent
 
 client = pysyslogclient.SyslogClientRFC5424("127.0.0.1", "514", proto="UDP")
 match_str = "([a-zA-Z]+\s\d{1,2}\s[0-9][0-9]:[0-9][0-9]:[0-9][0-9])\s([^ ]+)\s(%ASA[^: ]+):\s(.+)"
-payload = {"deviceVendor": "Cisco", "deviceProduct": "ASA", "deviceFacility": "local4", "SourceSystem": "OpsManager"}
+#payload = {"deviceVendor": "Cisco", "deviceProduct": "ASA", "deviceFacility": "local4", "SourceSystem": "OpsManager"}
+payload = {"deviceVendor": "Cisco", "deviceProduct": "ASA", "deviceFacility": "local4"}
 severity_table = {"1": "High", "2": "High", "3": "Medium", "4": "Medium"}
 
 
@@ -19,7 +20,7 @@ def send_cef(payload, spoof_host, syslog_msg):
         #pass
         #print(cef_msg)
         #print(syslog_msg)
-        cef_msg = "CEF:0|Cisco|ASA||106099||High|deviceFacility=local4 dvchost=jp-infosec-test-linux-1 msg=%ASA-1-106099: Deny TCP reverse path check from 135.89.112.99 to 32.246.198.99 on interface started99 rt=5/26/2023 5:40:04 PM dst=32.246.198.99 proto=TCP src=135.89.112.99 act=Deny OriginalLogSeverity=High"
+        #cef_msg = "CEF:0|Cisco|ASA||106099||High|deviceFacility=local4 dvchost=jp-infosec-test-linux-1 msg=%ASA-1-106099: Deny TCP reverse path check from 135.89.112.99 to 32.246.198.99 on interface started99 rt=5/26/2023 5:40:04 PM dst=32.246.198.99 proto=TCP src=135.89.112.99 act=Deny OriginalLogSeverity=Critical"
         client.log(message=cef_msg, program="CEF", hostname=spoof_host)
         client.close()
 
@@ -47,17 +48,26 @@ def sys_to_cef(syslog_msg):
         #if re.match("(Deny)\s(.+6)\s(reverse)\s(path)\s(check)\s(from)\s(.+)\sto\s(.+)\s(on)\s(interface)\s(.+)", msg):
         if re.match("Deny\s.{,10}\sreverse\spath\scheck", msg):
             tmp = msg.split(" ")
-            payload["dst"] = tmp[8]
+            payload["dst"] = tmp[8] # DestinationIP
             payload["proto"] = tmp[1]
             payload["sourceAddress"] = tmp[6]
-            #payload["RemoteIP"] = tmp[6]
+            #payload["RemoteIP"] = tmp[6] # This is automatically added by microsoft
             payload["act"] = tmp[0] # DeviceAction
-            #payload["simplifiedDeviceAction"] = tmp[0]
+            #payload["simplifiedDeviceAction"] = tmp[0] # This is automatically added by microsoft
             #payload["deviceDirection"] = "0"
         # Deny inbound UDP from 172.28.96.23/52717 to 10.125.0.5/161 on interface ENGINEERING
         elif re.match("Deny\sinbound\s.{,10}\sfrom", msg):
             tmp = msg.split(" ")
-            
+            payload["sourceAddress"] = tmp[4].split("/")[0] # SourceIP
+            payload["dst"] = tmp[6].split("/")[0] # DestinationIP
+            payload["dpt"] = tmp[6].split("/")[1] # DestinationPort
+            payload["proto"] = tmp[2] # Protocol
+            payload["act"] = tmp[0] # DeviceAction
+            payload["spt"] = tmp[4].split("/")[1] # SourcePort
+            payload["deviceDirection"] = tmp[1].capitalize() # CommunicationDirection
+            #payload["simplifiedDeviceAction"] = tmp[0] # This is automatically added by microsoft
+            #payload["RemoteIP"] = tmp[4].split("/")[0] # This is automatically added by microsoft
+            #payload["RemotePort"] = tmp[4].split("/")[1] # This is automatically added by microsoft
             print("message parsed")
         else:
             print("Nothing else to parse")
