@@ -1,4 +1,5 @@
 import re
+import os
 import time
 import pysyslogclient, datetime, argparse
 from event import CEFEvent
@@ -14,8 +15,13 @@ def send_cef(payload, spoof_host, syslog_msg):
     for k, v in payload.items():
         c.set_field(k, v)
         cef_msg = c.build_cef()
-    client.log(message=cef_msg, program="CEF", hostname=spoof_host)
-    client.close()
+    if(cef_msg):
+        #pass
+        #print(cef_msg)
+        #print(syslog_msg)
+        cef_msg = "CEF:0|Cisco|ASA||106099||High|deviceFacility=local4 dvchost=jp-infosec-test-linux-1 msg=%ASA-1-106099: Deny TCP reverse path check from 135.89.112.99 to 32.246.198.99 on interface started99 rt=5/26/2023 5:40:04 PM dst=32.246.198.99 proto=TCP src=135.89.112.99 act=Deny OriginalLogSeverity=High"
+        client.log(message=cef_msg, program="CEF", hostname=spoof_host)
+        client.close()
 
 def sys_to_cef(syslog_msg):
     ret = re.findall(match_str, syslog_msg)
@@ -28,19 +34,18 @@ def sys_to_cef(syslog_msg):
         fixed_dt = "{} {} {} {}".format(dt_arr[0], dt_arr[1], year, dt_arr[2])
         dt_obj = datetime.datetime.strptime(fixed_dt, "%b %d %Y %H:%M:%S")
         sev = ret[2].split("-")[1]
-        payload["dvchost"] = ret[1] # DeviceName
         spoof_host = ret[1]
-        payload["signatureId"] = ret[2].split("-")[-1] # DeviceEventClassID
-        payload["severity"] = severity_table[sev] # LogSeverity
-        #payload["OriginalLogSeverity"] = sev
-        payload["message"] = "{}: {}".format(ret[2], ret[3])
-        payload["DeviceAddress"] = ret[1]
-        #payload["rt"] = time.time() * 1000
-        payload["rt"] = datetime.datetime.today().strftime("%-m/%d/%Y %-I:%M:%S %p")
+        payload["dvchost"] = ret[1]                                                  # DeviceName
+        payload["signatureId"] = ret[2].split("-")[-1]                               # DeviceEventClassID
+        payload["severity"] = severity_table[sev]                                    # LogSeverity
+        payload["OriginalLogSeverity"] = sev                                         # OriginalLogSeverity
+        payload["message"] = "{}: {}".format(ret[2], ret[3])                         # Message
+        payload["DeviceAddress"] = ret[1]                                            # Computer
+        #payload["rt"] = time.time() * 1000                                           # ReceiptTime
+        payload["rt"] = datetime.datetime.today().strftime("%-m/%d/%Y %-I:%M:%S %p") # ReceiptTime
         # Deny UDP reverse path check from 135.89.112.113 to 32.246.198.2 on interface inside16
         #if re.match("(Deny)\s(.+6)\s(reverse)\s(path)\s(check)\s(from)\s(.+)\sto\s(.+)\s(on)\s(interface)\s(.+)", msg):
         if re.match("Deny\s.{,10}\sreverse\spath\scheck", msg):
-            #print("MATCHED!")
             tmp = msg.split(" ")
             payload["dst"] = tmp[8]
             payload["proto"] = tmp[1]
@@ -49,6 +54,11 @@ def sys_to_cef(syslog_msg):
             payload["act"] = tmp[0] # DeviceAction
             #payload["simplifiedDeviceAction"] = tmp[0]
             #payload["deviceDirection"] = "0"
+        # Deny inbound UDP from 172.28.96.23/52717 to 10.125.0.5/161 on interface ENGINEERING
+        elif re.match("Deny\sinbound\s.{,10}\sfrom", msg):
+            tmp = msg.split(" ")
+            
+            print("message parsed")
         else:
             print("Nothing else to parse")
         #print(payload)
