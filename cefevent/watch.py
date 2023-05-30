@@ -17,12 +17,10 @@ def send_cef(payload, spoof_host, syslog_msg):
         c.set_field(k, v)
         cef_msg = c.build_cef()
     if(cef_msg):
-        #pass
-        #print(cef_msg)
-        #print(syslog_msg)
-        #cef_msg = "CEF:0|Cisco|ASA||106099||High|deviceFacility=local4 dvchost=jp-infosec-test-linux-1 msg=%ASA-1-106099: Deny TCP reverse path check from 135.89.112.99 to 32.246.198.99 on interface started99 rt=5/26/2023 5:40:04 PM dst=32.246.198.99 proto=TCP src=135.89.112.99 act=Deny OriginalLogSeverity=Critical"
-        client.log(message=cef_msg, program="CEF", hostname=spoof_host)
-        client.close()
+        pass
+        #client.log(message=cef_msg, program="CEF", hostname=spoof_host)
+        #client.close()
+
 
 def sys_to_cef(syslog_msg):
     ret = re.findall(match_str, syslog_msg)
@@ -30,6 +28,7 @@ def sys_to_cef(syslog_msg):
         ret = ret[0]
         msg = ret[3]
         dt = ret[0]
+        #msg = 'Deny protocol 47 src outside:180.131.126.136 dst inside:10.195.35.18 by access-group "acl_outside" [0x2b345214, 0x0]'
         year = datetime.datetime.now().year
         dt_arr = dt.split(" ")
         fixed_dt = "{} {} {} {}".format(dt_arr[0], dt_arr[1], year, dt_arr[2])
@@ -45,8 +44,10 @@ def sys_to_cef(syslog_msg):
         #payload["rt"] = time.time() * 1000                                           # ReceiptTime
         payload["rt"] = datetime.datetime.today().strftime("%-m/%d/%Y %-I:%M:%S %p") # ReceiptTime
         # Deny UDP reverse path check from 135.89.112.113 to 32.246.198.2 on interface inside16
+        print(msg)
         #if re.match("(Deny)\s(.+6)\s(reverse)\s(path)\s(check)\s(from)\s(.+)\sto\s(.+)\s(on)\s(interface)\s(.+)", msg):
         if re.match("Deny\s.{,10}\sreverse\spath\scheck", msg):
+            print("1")
             tmp = msg.split(" ")
             payload["dst"] = tmp[8] # DestinationIP
             payload["proto"] = tmp[1]
@@ -57,6 +58,7 @@ def sys_to_cef(syslog_msg):
             #payload["deviceDirection"] = "0"
         # Deny inbound UDP from 172.28.96.23/52717 to 10.125.0.5/161 on interface ENGINEERING
         elif re.match("Deny\sinbound\s.{,10}\sfrom", msg):
+            print("2")
             tmp = msg.split(" ")
             payload["sourceAddress"] = tmp[4].split("/")[0] # SourceIP
             payload["dst"] = tmp[6].split("/")[0] # DestinationIP
@@ -68,11 +70,58 @@ def sys_to_cef(syslog_msg):
             #payload["simplifiedDeviceAction"] = tmp[0] # This is automatically added by microsoft
             #payload["RemoteIP"] = tmp[4].split("/")[0] # This is automatically added by microsoft
             #payload["RemotePort"] = tmp[4].split("/")[1] # This is automatically added by microsoft
-            print("message parsed")
+        # Deny protocol 47 src outside:180.131.126.136 dst inside:10.195.35.18 by access-group "acl_outside" [0x2b345214, 0x0]
+        elif re.match("Deny\sprotocol\s[0-9]+\ssrc", msg):
+            print("3")
+            tmp = msg.split(" ")
+            payload["act"] = tmp[0] # DeviceAction
+            payload["dst"] = tmp[6].split(":")[1] # DestinationIP
+            payload["proto"] = "protocol {}".format(tmp[2]) # Protocol
+            payload["sourceAddress"] = tmp[4].split(":")[1] # SourceIP
+        # Deny tcp src outside:89.248.165.189/45605 dst outside:12.207.186.126/63952 by access-group "acl_outside" [0x2b345214, 0x0]
+        elif re.match("Deny\s(tcp|udp)\ssrc\s", msg):
+            print("4")
+            tmp.split(" ")
+            payload["act"] = tmp[0] # DeviceAction
+            payload["dst"] = tmp[5].split(":")[1].split("/")[0] # DestinationIP
+            payload["proto"] = tmp[1] # Protocol
+            payload["dpt"] = tmp[5].split(":")[1].split("/")[1] # DestinationPort
+            payload["spt"] = tmp[3].split(":")[1].split("/")[1] # SourcePort
+            payload["sourceAddress"] = tmp[3].split(":")[1] # SourceIP
+        # Deny icmp src ATKEXNET:10.14.115.85 dst inside1:10.95.20.167 (type 3, code 3) by access-group "acl_ATKEXNET" [0xd43ee3b8, 0x0]
+        elif re.match("Deny\sicmp\ssrc\s", msg)
+            print("5")
+            tmp.split(" ")
+            payload["act"] = tmp[0] # DeviceAction
+            payload["dst"] = tmp[5].split(":")[1] # DestinationIP
+            payload["proto"] = tmp[1] # Protocol
+            payload["sourceAddress"] = tmp[3].split(":")[1] # SourceIP 
+        # Inbound TCP connection denied from 10.95.26.251/49966 to 192.168.1.21/7680 flags SYN on interface inside1
+        elif re.match("Inbound\s.{,10}\sconnection\sdenied\sfrom\s", msg)
+            print("6")
+            tmp.split(" ")
+            payload["act"] = tmp[3] # DeviceAction
+            payload["dpt"] = tmp[7].split("/")[1] # DestinationPort
+            payload["dst"] = tmp[7].split("/")[0] # DestinationIP
+            payload["proto"] = tmp[1] # Protocol
+            payload["spt"] = tmp[5].split("/")[1] # SourcePort
+            payload["sourceAddress"] = tmp[5].split("/")[0] # SourceIP
+            payload["deviceDirection"] = tmp[0] # CommunicationDirection
+        # TCP access denied by ACL from 39.155.22.82/1559 to outside:12.7.224.8/443
+        elif re.match(".{,10}\saccess\sdenied\sby\sACL\sfrom\s", msg)
+            print("7")
+            tmp.split(" ")
+            payload["act"] = tmp[2] # DeviceAction
+            payload["dpt"] = tmp[8].split("/")[1] # DestinationPort
+            payload["dst"] = tmp[8].split(":")[1].split("/")[0] # DestinationIP
+            payload["proto"] = tmp[0] # Protocol
+            payload["spt"] = tmp[6].split("/")[1] # SourcePort
+            payload["sourceAddress"] = tmp[6].split("/")[0] # SourceIP
         else:
-            print("Nothing else to parse")
+            print("No cases matched")
         #print(payload)
         send_cef(payload, spoof_host, syslog_msg)
+        print("end")
     #print(ret)
 
 
@@ -137,7 +186,7 @@ if __name__ == "__main__":
                         # rotation occurred but new file still not created
                         pass # wait 1 second and retry
                     time.sleep(1)
-                else:
+                e
                     #with open("out.txt", "a") as fw:
                     #    line = line.strip()
                     #    fw.write("{}\n".format(line))
