@@ -1,29 +1,7 @@
 import re
 
-"""
-elif re.match("Inbound\s.{,10}\sconnection\sdenied\sfrom\s", msg)
-print("6")
-tmp.split(" ")
-payload["act"] = tmp[3] # DeviceAction
-payload["dpt"] = tmp[7].split("/")[1] # DestinationPort
-payload["dst"] = tmp[7].split("/")[0] # DestinationIP
-payload["proto"] = tmp[1] # Protocol
-payload["spt"] = tmp[5].split("/")[1] # SourcePort
-payload["sourceAddress"] = tmp[5].split("/")[0] # SourceIP
-payload["deviceDirection"] = tmp[0] # CommunicationDirection
-# TCP access denied by ACL from 39.155.22.82/1559 to outside:12.7.224.8/443
-elif re.match(".{,10}\saccess\sdenied\sby\sACL\sfrom\s", msg)
-print("7")
-tmp.split(" ")
-payload["act"] = tmp[2] # DeviceAction
-payload["dpt"] = tmp[8].split("/")[1] # DestinationPort
-payload["dst"] = tmp[8].split(":")[1].split("/")[0] # DestinationIP
-payload["proto"] = tmp[0] # Protocol
-payload["spt"] = tmp[6].split("/")[1] # SourcePort
-payload["sourceAddress"] = tmp[6].split("/")[0] # SourceIP
-"""
 
-msg = 'Deny icmp src ATKEXNET:10.14.115.85 dst inside1:10.95.20.167 (type 3, code 3) by access-group "acl_ATKEXNET" [0xd43ee3b8, 0x0]'
+msg = 'TCP access denied by ACL from 39.155.22.82/1559 to outside:12.7.224.8/443'
 
 cases = {
          # Deny UDP reverse path check from 135.89.112.113 to 32.246.198.2 on interface inside16 
@@ -36,23 +14,21 @@ cases = {
          '4': '(?P<act>Deny)\s(?P<proto>.+)\ssrc\s.+:(?P<sourceAddress>[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3})/(?P<spt>[0-9]{1,5})\sdst\s.+:(?P<dst>[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3})/(?P<dpt>[0-9]{1,5})\s.+$',
          # Deny icmp src ATKEXNET:10.14.115.85 dst inside1:10.95.20.167 (type 3, code 3) by access-group "acl_ATKEXNET" [0xd43ee3b8, 0x0]
          '5': '(?P<act>Deny)\s(?P<proto>icmp)\ssrc\s.+:(?P<sourceAddress>[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3})\sdst\s.+:(?P<dst>[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3})\s.+$',
+         # Inbound TCP connection denied from 10.95.26.251/49966 to 192.168.1.21/7680 flags SYN on interface inside1
+         '6': '(?P<deviceDirection>Inbound)\s(?P<proto>.+)\sconnection\s(?P<act>.+)\sfrom\s(?P<sourceAddress>[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3})/(?P<spt>[0-9]{1,5})\sto\s(?P<dst>[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3})/(?P<dpt>[0-9]{1,5})\s.+$',
+         # TCP access denied by ACL from 39.155.22.82/1559 to outside:12.7.224.8/443
+         '7': '(?P<proto>.+)\saccess\sdenied\sby\sACL\sfrom\s(?P<sourceAddress>[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3})/(?P<spt>[0-9]{1,5})\sto\s.+:(?P<dst>[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3})/(?P<dpt>[0-9]{1,5})',
         }
 
 payload = {}
 for case in cases:
     match = re.search(cases[case], msg)
     if match:
+        print("case: {}".format(case))
         for key in match.groupdict():
             payload[key] = match.group(key)
-        if case == "1":
-            print("case 1")
         if case == "2":
-            print("case 2")
             payload["deviceDirection"] = payload["deviceDirection"].capitalize() 
-        if case == "3":
-            print("case 3")
-        if case == "4":
-            print("case 4")
         break
 
 print(payload)
