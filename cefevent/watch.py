@@ -19,12 +19,13 @@ def send_cef(payload, spoof_host, syslog_msg):
         c.set_field(k, v)
         cef_msg = c.build_cef()
     if(cef_msg):
-        pass
-        #client.log(message=cef_msg, program="CEF", hostname=spoof_host)
-        #client.close()
+        #pass
+        client.log(message=cef_msg, program="CEF", hostname=spoof_host)
+        client.close()
 
 
 def parse_msg(msg, payload):
+    #print(msg)
     cases = {
             # Deny UDP reverse path check from 135.89.112.113 to 32.246.198.2 on interface inside16
             '1': '(?P<act>Deny)\s(?P<proto>.+)\sreverse\spath\scheck\sfrom\s(?P<sourceAddress>[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3})\sto\s(?P<dst>[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3})\son\s.+$',
@@ -44,17 +45,17 @@ def parse_msg(msg, payload):
     for case in cases:
         match = re.search(cases[case], msg)
         if match:
-            print("case: {}".format(case))
-        for key in match.groupdict():
-            payload[key] = match.group(key)
+            #print("case: {}".format(case))
+            for key in match.groupdict():
+                payload[key] = match.group(key)
             if case == "2":
                 payload["deviceDirection"] = payload["deviceDirection"].capitalize()
-        break
+            break
     return payload
 
 
 def sys_to_cef(syslog_msg):
-    print(syslog_msg)
+    #print(syslog_msg)
     #ret = re.findall(match_str, syslog_msg)
     ret = re.search(match_str, syslog_msg)
     if ret:

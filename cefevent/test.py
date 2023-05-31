@@ -1,7 +1,7 @@
 import re
 
 
-msg = 'TCP access denied by ACL from 39.155.22.82/1559 to outside:12.7.224.8/443'
+msg = 'Deny inbound UDP from 172.28.96.23/52717 to 10.125.0.5/161 on interface ENGINEERING'
 
 cases = {
          # Deny UDP reverse path check from 135.89.112.113 to 32.246.198.2 on interface inside16 
