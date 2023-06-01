@@ -217,9 +217,9 @@ if __name__ == "__main__":
     file_path = "/var/log/asa"
     file_name = "log.asa"
     file_full_path = "{}/{}".format(file_path, file_name)
-
-    if not os.path.exists(file_full_path):
+    if not os.path.exists(file_path):
         os.makedirs(file_path)
+    if not os.path.exists(file_full_path):
         Path(file_full_path).touch()
 
     seek_end = True
