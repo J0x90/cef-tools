@@ -2,6 +2,7 @@ import re
 import os
 import time
 import pysyslogclient, datetime, argparse
+from pathlib import Path
 from event import CEFEvent
 
 client = pysyslogclient.SyslogClientRFC5424("127.0.0.1", "514", proto="UDP")
@@ -213,17 +214,24 @@ if __name__ == "__main__":
         sys_to_cef(line)
     """
 
-    file_name = "/var/log/asa/asa.log"
+    file_path = "/var/log/asa"
+    file_name = "log.asa"
+    file_full_path = "{}/{}".format(file_path, file_name)
+
+    if not os.path.exists(file_full_path):
+        os.makedirs(file_path)
+        Path(file_full_path).touch()
+
     seek_end = True
     while True: # handle moved/truncated files by allowing to reopen
-        with open(file_name) as f:
+        with open(file_full_path) as f:
             if seek_end: # reopened files must not seek end
                 f.seek(0, 2)
             while True: # line reading loop
                 line = f.readline()
                 if not line:
                     try:
-                        if f.tell() > os.path.getsize(file_name):
+                        if f.tell() > os.path.getsize(file_full_path):
                             # rotation occurred (copytruncate/create)
                             f.close()
                             seek_end = False
